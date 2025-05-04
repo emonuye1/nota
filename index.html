@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Nota Sederhana</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .customer-info, .invoice-info {
+            width: 48%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .total-section {
+            margin-top: 20px;
+            text-align: right;
+        }
+        .total-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 5px;
+        }
+        .total-label {
+            width: 150px;
+            font-weight: bold;
+            margin-right: 20px;
+        }
+        .total-value {
+            width: 100px;
+            text-align: right;
+        }
+        .grand-total {
+            font-weight: bold;
+            font-size: 18px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px solid #000;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+        .actions {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .add-item-button {
+            margin-bottom: 20px;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background-color: #f2f2f2;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: white;
+            border-bottom: 1px solid white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="openTab('createInvoice')">Buat Nota</div>
+            <div class="tab" onclick="openTab('invoiceList')">Daftar Nota</div>
+            <div class="tab" onclick="openTab('settings')">Pengaturan</div>
+        </div>
+        
+        <div id="createInvoice" class="tab-content active">
+            <div class="header">
+                <div class="logo" id="company-name">Emon Semongko</div>
+                <div id="company-address">Lokasi Metro</div>
+                <div id="company-contact">Telp: 082379821111</div>
+            </div>
+            
+            <div class="info">
+                <div class="customer-info">
+                    <h3>Informasi Pelanggan</h3>
+                    <div class="form-group">
+                        <label for="customer-name">Nama Pelanggan</label>
+                        <input type="text" id="customer-name">
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-address">Alamat</label>
+                        <textarea id="customer-address" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-phone">No. Telepon</label>
+                        <input type="text" id="customer-phone">
+                    </div>
+                </div>
+                
+                <div class="invoice-info">
+                    <h3>Informasi Nota</h3>
+                    <div class="form-group">
+                        <label for="invoice-number">Nomor Nota</label>
+                        <input type="text" id="invoice-number" value="INV-001">
+                    </div>
+                    <div class="form-group">
+                        <label for="invoice-date">Tanggal</label>
+                        <input type="date" id="invoice-date">
+                    </div>
+                    <div class="form-group">
+                        <label for="payment-method">Metode Pembayaran</label>
+                        <select id="payment-method">
+                            <option value="cash">Tunai</option>
+                            <option value="transfer">Transfer Bank</option>
+                            <option value="credit-card">Kartu Kredit</option>
+                            <option value="e-wallet">E-Wallet</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Detail Barang</h3>
+            <button class="add-item-button" onclick="addItem()">+ Tambah Barang</button>
+            
+            <table id="items-table">
+                <thead>
+                    <tr>
+                        <th style="width: 5%">No.</th>
+                        <th style="width: 35%">Nama Barang</th>
+                        <th style="width: 15%">Jumlah</th>
+                        <th style="width: 20%">Harga Satuan</th>
+                        <th style="width: 20%">Total</th>
+                        <th style="width: 5%">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="items-body">
+                    <tr>
+                        <td>1</td>
+                        <td><input type="text" name="item-name[]" placeholder="Nama barang"></td>
+                        <td><input type="number" name="item-quantity[]" placeholder="Jumlah" min="1" onchange="calculateItemTotal(this)"></td>
+                        <td><input type="number" name="item-price[]" placeholder="Harga" min="0" onchange="calculateItemTotal(this)"></td>
+                        <td class="item-total">0</td>
+                        <td><button onclick="removeItem(this)" style="padding: 5px; background-color: #f44336;">X</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="total-section">
+                <div class="total-row">
+                    <div class="total-label">Subtotal</div>
+                    <div class="total-value" id="subtotal">Rp 0</div>
+                </div>
+                <div class="total-row">
+                    <div class="total-label">Diskon</div>
+                    <div class="total-value">
+                        <input type="number" id="discount" value="0" min="0" onchange="calculateTotal()">
+                    </div>
+                </div>
+                <div class="total-row grand-total">
+                    <div class="total-label">TOTAL</div>
+                    <div class="total-value" id="grand-total">Rp 0</div>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button onclick="saveInvoice()">Simpan Nota</button>
+                <button onclick="printInvoice()">Cetak Nota</button>
+                <button onclick="sendInvoice()">Kirim ke Pelanggan</button>
+            </div>
+        </div>
+        
+        <div id="invoiceList" class="tab-content">
+            <h2>Daftar Nota</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>No. Nota</th>
+                        <th>Tanggal</th>
+                        <th>Pelanggan</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="invoice-list-body">
+                    <tr>
+                        <td colspan="6" style="text-align: center;">Tidak ada data nota</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div id="settings" class="tab-content">
+            <h2>Pengaturan Toko</h2>
+            <div class="form-group">
+                <label for="settings-company-name">Nama Toko</label>
+                <input type="text" id="settings-company-name" value="Emon Semongko">
+            </div>
+            <div class="form-group">
+                <label for="settings-company-address">Alamat Toko</label>
+                <textarea id="settings-company-address" rows="3">Lokasi Metro</textarea>
+            </div>
+            <div class="form-group">
+                <label for="settings-company-phone">No. Telepon</label>
+                <input type="text" id="settings-company-phone" value="082379821111">
+            </div>
+            <button onclick="saveSettings()">Simpan Pengaturan</button>
+        </div>
+        
+        <div class="footer">
+            <p>Terima kasih atas kepercayaan Anda berbelanja di toko kami.</p>
+            <p>© 2025 Aplikasi Nota Sederhana</p>
+        </div>
+    </div>
+
+    <script>
+        // Set tanggal hari ini sebagai default
+        document.getElementById('invoice-date').valueAsDate = new Date();
+        
+        // Fungsi untuk menambah item barang
+        function addItem() {
+            var table = document.getElementById('items-body');
+            var rowCount = table.rows.length;
+            var row = table.insertRow(rowCount);
+            
+            row.innerHTML = `
+                <td>${rowCount + 1}</td>
+                <td><input type="text" name="item-name[]" placeholder="Nama barang"></td>
+                <td><input type="number" name="item-quantity[]" placeholder="Jumlah" min="1" onchange="calculateItemTotal(this)"></td>
+                <td><input type="number" name="item-price[]" placeholder="Harga" min="0" onchange="calculateItemTotal(this)"></td>
+                <td class="item-total">0</td>
+                <td><button onclick="removeItem(this)" style="padding: 5px; background-color: #f44336;">X</button></td>
+            `;
+            
+            calculateTotal();
+        }
+        
+        // Fungsi untuk menghapus item barang
+        function removeItem(btn) {
+            var row = btn.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+            
+            // Memperbarui nomor urut
+            var table = document.getElementById('items-body');
+            for (var i = 0; i < table.rows.length; i++) {
+                table.rows[i].cells[0].innerHTML = i + 1;
+            }
+            
+            calculateTotal();
+        }
+        
+        // Menghitung total harga per item
+        function calculateItemTotal(input) {
+            var row = input.parentNode.parentNode;
+            var quantity = row.cells[2].querySelector('input').value || 0;
+            var price = row.cells[3].querySelector('input').value || 0;
+            var total = quantity * price;
+            
+            row.cells[4].innerHTML = formatCurrency(total);
+            
+            calculateTotal();
+        }
+        
+        // Menghitung total keseluruhan
+        function calculateTotal() {
+            var table = document.getElementById('items-body');
+            var subtotal = 0;
+            
+            for (var i = 0; i < table.rows.length; i++) {
+                var quantity = table.rows[i].cells[2].querySelector('input').value || 0;
+                var price = table.rows[i].cells[3].querySelector('input').value || 0;
+                subtotal += quantity * price;
+            }
+            
+            var discount = document.getElementById('discount').value || 0;
+            var grandTotal = subtotal - discount;
+            
+            document.getElementById('subtotal').innerHTML = formatCurrency(subtotal);
+            document.getElementById('grand-total').innerHTML = formatCurrency(grandTotal);
+        }
+        
+        // Format angka ke format mata uang
+        function formatCurrency(amount) {
+            return 'Rp ' + amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+        
+        // Mengganti tab yang aktif
+        function openTab(tabName) {
+            var i, tabContent, tabLinks;
+            
+            tabContent = document.getElementsByClassName('tab-content');
+            for (i = 0; i < tabContent.length; i++) {
+                tabContent[i].classList.remove('active');
+            }
+            
+            tabLinks = document.getElementsByClassName('tab');
+            for (i = 0; i < tabLinks.length; i++) {
+                tabLinks[i].classList.remove('active');
+            }
+            
+            document.getElementById(tabName).classList.add('active');
+            
+            // Temukan tombol tab yang sesuai dengan tabName dan tambahkan class active
+            for (i = 0; i < tabLinks.length; i++) {
+                if (tabLinks[i].textContent.trim().toLowerCase().replace(/\s+/g, '') === tabName.toLowerCase().replace(/\s+/g, '')) {
+                    tabLinks[i].classList.add('active');
+                    break;
+                }
+            }
+        }
+        
+        // Menyimpan nota (implementasi sederhana)
+        function saveInvoice() {
+            alert('Nota berhasil disimpan!');
+            
+            // Demo: Menambahkan ke daftar nota
+            var invoiceNumber = document.getElementById('invoice-number').value;
+            var invoiceDate = document.getElementById('invoice-date').value;
+            var customerName = document.getElementById('customer-name').value || 'Pelanggan Umum';
+            var grandTotal = document.getElementById('grand-total').innerHTML;
+            
+            var table = document.getElementById('invoice-list-body');
+            if (table.rows.length === 1 && table.rows[0].cells.length === 1) {
+                // Menghapus baris "Tidak ada data"
+                table.deleteRow(0);
+            }
+            
+            var newRow = table.insertRow();
+            newRow.innerHTML = `
+                <td>${invoiceNumber}</td>
+                <td>${formatDate(invoiceDate)}</td>
+                <td>${customerName}</td>
+                <td>${grandTotal}</td>
+                <td>Lunas</td>
+                <td>
+                    <button onclick="viewInvoice('${invoiceNumber}')" style="padding: 5px; background-color: #2196F3;">Lihat</button>
+                    <button onclick="printInvoice()" style="padding: 5px; background-color: #4CAF50;">Cetak</button>
+                </td>
+            `;
+            
+            // Menambah nomor nota untuk nota berikutnya
+            var currentNumber = parseInt(invoiceNumber.replace('INV-', ''));
+            var nextNumber = 'INV-' + ('000' + (currentNumber + 1)).slice(-3);
+            document.getElementById('invoice-number').value = nextNumber;
+            
+            // Reset form
+            document.getElementById('customer-name').value = '';
+            document.getElementById('customer-address').value = '';
+            document.getElementById('customer-phone').value = '';
+            
+            var itemsBody = document.getElementById('items-body');
+            while (itemsBody.rows.length > 0) {
+                itemsBody.deleteRow(0);
+            }
+            addItem();
+        }
+        
+        // Format tanggal
+        function formatDate(dateString) {
+            var date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        }
+        
+        // Mencetak nota
+        function printInvoice() {
+            // Menyimpan status tampilan saat ini
+            var container = document.querySelector('.container');
+            var originalContent = container.innerHTML;
+            
+            // Menyiapkan tampilan cetak
+            var printContent = `
+                <div class="header">
+                    <div class="logo" id="print-company-name">${document.getElementById('company-name').innerHTML}</div>
+                    <div id="print-company-address">${document.getElementById('company-address').innerHTML}</div>
+                    <div id="print-company-contact">${document.getElementById('company-contact').innerHTML}</div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <div><strong>Nomor Nota:</strong> ${document.getElementById('invoice-number').value}</div>
+                    <div><strong>Tanggal:</strong> ${formatDate(document.getElementById('invoice-date').value)}</div>
+                    <div><strong>Metode Pembayaran:</strong> ${document.getElementById('payment-method').options[document.getElementById('payment-method').selectedIndex].text}</div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <div><strong>Pelanggan:</strong> ${document.getElementById('customer-name').value || 'Pelanggan Umum'}</div>
+                    <div><strong>Alamat:</strong> ${document.getElementById('customer-address').value || '-'}</div>
+                    <div><strong>Telepon:</strong> ${document.getElementById('customer-phone').value || '-'}</div>
+                </div>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">No.</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Nama Barang</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Jumlah</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Harga Satuan</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            // Menambahkan item-item barang
+            var itemsTable = document.getElementById('items-body');
+            for (var i = 0; i < itemsTable.rows.length; i++) {
+                var itemName = itemsTable.rows[i].cells[1].querySelector('input').value;
+                var itemQty = itemsTable.rows[i].cells[2].querySelector('input').value;
+                var itemPrice = itemsTable.rows[i].cells[3].querySelector('input').value;
+                var itemTotal = itemQty * itemPrice;
+                
+                printContent += `
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${i + 1}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${itemName || '-'}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${itemQty}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(itemPrice)}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(itemTotal)}</td>
+                    </tr>
+                `;
+            }
+            
+            // Menambahkan informasi total
+            var subtotal = document.getElementById('subtotal').innerHTML;
+            var discount = document.getElementById('discount').value;
+            var grandTotal = document.getElementById('grand-total').innerHTML;
+            
+            printContent += `
+                    </tbody>
+                </table>
+                
+                <div style="text-align: right; margin-top: 20px;">
+                    <div style="margin-bottom: 5px;"><strong>Subtotal:</strong> ${subtotal}</div>
+                    <div style="margin-bottom: 5px;"><strong>Diskon:</strong> Rp ${discount}</div>
+                    <div style="font-size: 18px; font-weight: bold; margin-top: 10px; border-top: 2px solid #000; padding-top: 10px;">
+                        <strong>TOTAL:</strong> ${grandTotal}
+                    </div>
+                </div>
+                
+                <div style="margin-top: 50px; display: flex; justify-content: space-between;">
+                    <div style="text-align: center; width: 45%;">
+                        <div style="margin-bottom: 60px;">Penerima</div>
+                        <div style="border-top: 1px solid #000; padding-top: 5px;">${document.getElementById('customer-name').value || 'Pelanggan'}</div>
+                    </div>
+                    <div style="text-align: center; width: 45%;">
+                        <div style="margin-bottom: 60px;">Hormat Kami</div>
+                        <div style="border-top: 1px solid #000; padding-top: 5px;">Emon Semongko</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 50px; text-align: center; font-size: 14px; color: #666;">
+                    <p>Terima kasih atas kepercayaan Anda berbelanja di toko kami.</p>
+                </div>
+            `;
+            
+            // Mengganti konten untuk mencetak
+            container.innerHTML = printContent;
+            
+            // Mencetak
+            setTimeout(function() {
+                window.print();
+                
+                // Mengembalikan tampilan asli setelah mencetak
+                setTimeout(function() {
+                    container.innerHTML = originalContent;
+                    
+                    // Menginisialisasi ulang event handlers
+                    document.getElementById('invoice-date').valueAsDate = new Date();
+                    calculateTotal();
+                    
+                    // Menginisialisasi ulang tab handlers
+                    var tabs = document.getElementsByClassName('tab');
+                    for (var i = 0; i < tabs.length; i++) {
+                        tabs[i].onclick = function() {
+                            openTab(this.textContent.trim().replace(' ', '').toLowerCase());
+                        };
+                    }
+                }, 500);
+            }, 500);
+        }
+        
+        // Mengirim nota ke pelanggan (implementasi sederhana)
+        function sendInvoice() {
+            var customerName = document.getElementById('customer-name').value || 'pelanggan';
+            alert(`Nota telah dikirim ke ${customerName} melalui email/WhatsApp!`);
+        }
+        
+        // Melihat nota
+        function viewInvoice(invoiceNumber) {
+            // Demo: Data nota yang disimpan (dalam aplikasi nyata akan diambil dari database)
+            var demoInvoices = {
+                'INV-001': {
+                    number: 'INV-001',
+                    date: '2025-05-04',
+                    customer: {
+                        name: 'Budi Santoso',
+                        address: 'Jalan Merdeka No. 45, Metro',
+                        phone: '081234567890'
+                    },
+                    payment: 'transfer',
+                    items: [
+                        { name: 'Produk A', quantity: 2, price: 150000 },
+                        { name: 'Produk B', quantity: 1, price: 200000 }
+                    ],
+                    discount: 25000,
+                    tax: true
+                }
+            };
+            
+            // Jika invoiceNumber tidak ada di demoInvoices, gunakan data default
+            if (!demoInvoices[invoiceNumber]) {
+                alert(`Data nota ${invoiceNumber} tidak ditemukan. Menampilkan data contoh.`);
+                invoiceNumber = 'INV-001';
+            }
+            
+            var invoice = demoInvoices[invoiceNumber];
+            
+            // Tampilkan data nota di form
+            document.getElementById('invoice-number').value = invoice.number;
+            document.getElementById('invoice-date').value = invoice.date;
+            document.getElementById('customer-name').value = invoice.customer.name;
+            document.getElementById('customer-address').value = invoice.customer.address;
+            document.getElementById('customer-phone').value = invoice.customer.phone;
+            document.getElementById('payment-method').value = invoice.payment;
+            
+            // Hapus semua item yang ada
+            var itemsBody = document.getElementById('items-body');
+            while (itemsBody.rows.length > 0) {
+                itemsBody.deleteRow(0);
+            }
+            
+            // Tambahkan item-item dari nota
+            for (var i = 0; i < invoice.items.length; i++) {
+                var row = itemsBody.insertRow(i);
+                var item = invoice.items[i];
+                
+                row.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td><input type="text" name="item-name[]" value="${item.name}" placeholder="Nama barang"></td>
+                    <td><input type="number" name="item-quantity[]" value="${item.quantity}" min="1" onchange="calculateItemTotal(this)"></td>
+                    <td><input type="number" name="item-price[]" value="${item.price}" min="0" onchange="calculateItemTotal(this)"></td>
+                    <td class="item-total">${formatCurrency(item.quantity * item.price)}</td>
+                    <td><button onclick="removeItem(this)" style="padding: 5px; background-color: #f44336;">X</button></td>
+                `;
+            }
+            
+            // Set diskon
+            document.getElementById('discount').value = invoice.discount;
+            
+            // Hitung total
+            calculateTotal();
+            
+            // Buka tab createInvoice
+            openTab('createInvoice');
+        }
+        
+        // Menyimpan pengaturan toko
+        function saveSettings() {
+            var companyName = document.getElementById('settings-company-name').value;
+            var companyAddress = document.getElementById('settings-company-address').value;
+            var companyPhone = document.getElementById('settings-company-phone').value;
+            
+            document.getElementById('company-name').innerHTML = companyName;
+            document.getElementById('company-address').innerHTML = companyAddress;
+            document.getElementById('company-contact').innerHTML = `Telp: ${companyPhone}`;
+            
+            alert('Pengaturan toko berhasil disimpan!');
+            openTab('createInvoice');
+        }
+        
+        // Inisialisasi
+        calculateTotal();
+    </script>
+</body>
+</html>
