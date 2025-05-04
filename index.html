@@ -655,30 +655,118 @@
         // Inisialisasi
         calculateTotal();
     </script>
-</body>
-</body>
 <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+  import { saveInvoiceToFirebase, loadInvoicesFromFirebase, viewInvoiceFromFirebase } from './firebase.js';
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyCugcz9mTLRBM18LBO0VCnOFkrA0mv1eU4",
-    authDomain: "nota-1d8c3.firebaseapp.com",
-    projectId: "nota-1d8c3",
-    storageBucket: "nota-1d8c3.firebasestorage.app",
-    messagingSenderId: "712424132553",
-    appId: "1:712424132553:web:70b9a8e7931a5c206da218",
-    measurementId: "G-7D9TDZZLFW"
+  // Modifikasi fungsi saveInvoice
+  window.saveInvoice = async function() {
+    const invoiceData = {
+      invoiceNumber: document.getElementById('invoice-number').value,
+      date: document.getElementById('invoice-date').value,
+      customerName: document.getElementById('customer-name').value || 'Pelanggan Umum',
+      customerAddress: document.getElementById('customer-address').value || '-',
+      customerPhone: document.getElementById('customer-phone').value || '-',
+      paymentMethod: document.getElementById('payment-method').value,
+      subtotal: document.getElementById('subtotal').innerHTML,
+      discount: document.getElementById('discount').value,
+      grandTotal: document.getElementById('grand-total').innerHTML,
+      items: getInvoiceItems()
+    };
+
+    try {
+      await saveInvoiceToFirebase(invoiceData);
+      alert("Nota berhasil disimpan di cloud!");
+      
+      // Panggil fungsi asli saveInvoice untuk proses selanjutnya
+      originalSaveInvoice();
+    } catch (error) {
+      alert("Gagal menyimpan nota");
+    }
   };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
+  // Fungsi untuk memuat daftar nota
+  window.loadInvoices = async function() {
+    try {
+      const invoices = await loadInvoicesFromFirebase();
+      const invoiceListBody = document.getElementById('invoice-list-body');
+      invoiceListBody.innerHTML = '';
+
+      if (invoices.length === 0) {
+        invoiceListBody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center;">Tidak ada data nota</td>
+          </tr>
+        `;
+        return;
+      }
+
+      invoices.forEach(invoice => {
+        const row = invoiceListBody.insertRow();
+        row.innerHTML = `
+          <td>${invoice.invoiceNumber}</td>
+          <td>${invoice.date}</td>
+          <td>${invoice.customerName}</td>
+          <td>${invoice.grandTotal}</td>
+          <td>Lunas</td>
+          <td>
+            <button onclick="viewInvoice('${invoice.id}')" style="padding: 5px; background-color: #2196F3;">Lihat</button>
+            <button onclick="printInvoice()" style="padding: 5px; background-color: #4CAF50;">Cetak</button>
+          </td>
+        `;
+      });
+    } catch (error) {
+      alert("Gagal memuat daftar nota");
+    }
+  };
+
+  // Fungsi untuk melihat detail nota
+  window.viewInvoice = async function(docId) {
+    try {
+      const invoice = await viewInvoiceFromFirebase(docId);
+      
+      // Isi form dengan data nota
+      document.getElementById('invoice-number').value = invoice.invoiceNumber;
+      document.getElementById('invoice-date').value = invoice.date;
+      document.getElementById('customer-name').value = invoice.customerName;
+      document.getElementById('customer-address').value = invoice.customerAddress;
+      document.getElementById('customer-phone').value = invoice.customerPhone;
+      document.getElementById('payment-method').value = invoice.paymentMethod;
+      document.getElementById('discount').value = invoice.discount;
+
+      // Hapus item lama
+      const itemsBody = document.getElementById('items-body');
+      while (itemsBody.rows.length > 0) {
+        itemsBody.deleteRow(0);
+      }
+
+      // Tambah item baru
+      invoice.items.forEach((item, index) => {
+        const row = itemsBody.insertRow(index);
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td><input type="text" name="item-name[]" value="${item.name}" placeholder="Nama barang"></td>
+          <td><input type="number" name="item-quantity[]" value="${item.quantity}" min="1" onchange="calculateItemTotal(this)"></td>
+          <td><input type="number" name="item-price[]" value="${item.price}" min="0" onchange="calculateItemTotal(this)"></td>
+          <td class="item-total">${item.total}</td>
+          <td><button onclick="removeItem(this)" style="padding: 5px; background-color: #f44336;">X</button></td>
+        `;
+      });
+
+      calculateTotal();
+      openTab('createInvoice');
+    } catch (error) {
+      alert("Gagal memuat nota");
+    }
+  };
+
+  // Tambahkan event listener untuk tab invoiceList
+  document.addEventListener('DOMContentLoaded', () => {
+    const invoiceListTab = document.querySelector('.tab[onclick="openTab(\'invoiceList\')"]');
+    if (invoiceListTab) {
+      invoiceListTab.addEventListener('click', loadInvoices);
+    }
+  });
 </script>
+</body>
 
 </html>
