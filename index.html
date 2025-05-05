@@ -341,33 +341,45 @@
         // Set tanggal hari ini sebagai default
         document.getElementById('invoice-date').valueAsDate = new Date();
         
-        // Konfigurasi Firebase
         const firebaseConfig = {
-            apiKey: "AIzaSyCugcz9mTLRBM18LB00VCnOFkrA0mvTeU4",
-            authDomain: "nota-1d8c3.firebaseapp.com",
-            projectId: "nota-1d8c3",
-            storageBucket: "nota-1d8c3.firebasestorage.app",
-            messagingSenderId: "712424132553",
-            appId: "1:712424132553:web:70b9a8e7931a5c206da218",
-            measurementId: "G-7D9TDZZLFW"
-        };
+    apiKey: "AIzaSyCugcz9mTLRBM18LB00VCnOFkrA0mvTeU4",
+    authDomain: "nota-1d8c3.firebaseapp.com",
+    projectId: "nota-1d8c3",
+    storageBucket: "nota-1d8c3.firebasestorage.app",
+    messagingSenderId: "712424132553",
+    appId: "1:712424132553:web:70b9a8e7931a5c206da218",
+    measurementId: "G-7D9TDZZLFW"
+};
 
-        // Inisialisasi Firebase
-        let firebaseInitialized = false;
-        let db;
+// Inisialisasi Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-        // Tampilkan pesan status
-        function showStatusMessage(message, isError = false) {
-            const statusDiv = document.getElementById('status-message');
-            statusDiv.textContent = message;
-            statusDiv.className = isError ? 'status-message error' : 'status-message success';
-            statusDiv.style.display = 'block';
-            
-            // Sembunyikan pesan setelah 5 detik
-            setTimeout(() => {
-                statusDiv.style.display = 'none';
-            }, 5000);
-        }
+// Aktifkan penyimpanan offline
+db.enablePersistence()
+  .then(() => {
+    console.log("Firebase persistence diaktifkan");
+  })
+  .catch((err) => {
+    if (err.code == 'failed-precondition') {
+      console.warn("Persistence gagal: Beberapa tab terbuka");
+    } else if (err.code == 'unimplemented') {
+      console.warn("Persistence gagal: Browser tidak mendukung");
+    }
+  });
+
+// Tes koneksi Firebase
+db.collection('test').doc('test').set({
+    timestamp: new Date(),
+    status: 'Koneksi berhasil'
+})
+.then(() => {
+    console.log("Koneksi Firebase berhasil diuji");
+})
+.catch(error => {
+    console.error("Koneksi Firebase gagal:", error);
+    alert("Koneksi ke database gagal. Periksa koneksi internet Anda.");
+});
 
         // Inisialisasi Firebase dengan penanganan kesalahan
         try {
