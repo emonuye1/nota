@@ -319,7 +319,7 @@
             statusBar.style.color = isError ? '#721c24' : '#155724';
         }
         
-        // Konfigurasi Firebase
+        // Konfigurasi Firebase yang benar dari konsol Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCugcz9mTLRBM18LB00VCnOFkrA0mvTeU4",
             authDomain: "nota-1d8c3.firebaseapp.com",
@@ -343,7 +343,7 @@
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             })
             .then(() => {
-                updateStatus("Terhubung ke database");
+                updateStatus("Firebase berhasil diinisialisasi");
             })
             .catch(error => {
                 console.error("Error koneksi:", error);
@@ -404,12 +404,12 @@
             var subtotal = 0;
             
             for (var i = 0; i < table.rows.length; i++) {
-                var quantity = table.rows[i].cells[2].querySelector('input').value || 0;
-                var price = table.rows[i].cells[3].querySelector('input').value || 0;
+                var quantity = parseFloat(table.rows[i].cells[2].querySelector('input').value || 0);
+                var price = parseFloat(table.rows[i].cells[3].querySelector('input').value || 0);
                 subtotal += quantity * price;
             }
             
-            var discount = document.getElementById('discount').value || 0;
+            var discount = parseFloat(document.getElementById('discount').value || 0);
             var grandTotal = subtotal - discount;
             
             document.getElementById('subtotal').innerHTML = formatCurrency(subtotal);
@@ -419,6 +419,12 @@
         // Format angka ke format mata uang
         function formatCurrency(amount) {
             return 'Rp ' + amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+        
+        // Fungsi untuk mengkonversi format mata uang ke angka
+        function parseCurrency(currencyString) {
+            if (!currencyString) return 0;
+            return parseFloat(currencyString.replace('Rp ', '').replace(/\./g, '').trim()) || 0;
         }
         
         // Mengganti tab yang aktif
@@ -437,95 +443,105 @@
             
             document.getElementById(tabName).classList.add('active');
             
-            // Temukan tombol tab yang sesuai dengan tabName dan tambahkan class active
-            for (i = 0; i < tabLinks.length; i++) {
-                if (tabLinks[i].textContent.trim().toLowerCase().replace(/\s+/g, '') === tabName.toLowerCase().replace(/\s+/g, '')) {
-                    tabLinks[i].classList.add('active');
-                    break;
-                }
-            }
-            
-            // Jika membuka tab daftar nota, muat data
-            if (tabName === 'invoiceList') {
+            // Temukan tombol tab yang sesuai
+            if (tabName === 'createInvoice') {
+                tabLinks[0].classList.add('active');
+            } else if (tabName === 'invoiceList') {
+                tabLinks[1].classList.add('active');
                 loadInvoiceList();
+            } else if (tabName === 'settings') {
+                tabLinks[2].classList.add('active');
             }
         }
         
-        // Fungsi untuk menyimpan nota ke Firestore
+        // Fungsi untuk menyimpan nota ke Firestore - PERBAIKAN DISINI
         function saveInvoice() {
             updateStatus("Menyimpan nota...");
             
-            // Ambil semua data dari formulir
-            const invoiceNumber = document.getElementById('invoice-number').value;
-            
-            if (!invoiceNumber) {
-                updateStatus("Nomor nota tidak boleh kosong!", true);
-                return;
-            }
-            
-            // Buat objek data invoice yang akan disimpan
-            const invoiceData = {
-                invoiceNumber: invoiceNumber,
-                invoiceDate: document.getElementById('invoice-date').value,
-                customerName: document.getElementById('customer-name').value || 'Pelanggan Umum',
-                customerAddress: document.getElementById('customer-address').value || '',
-                customerPhone: document.getElementById('customer-phone').value || '',
-                paymentMethod: document.getElementById('payment-method').value,
-                items: [],
-                subtotal: parseFloat(document.getElementById('subtotal').innerHTML.replace('Rp ', '').replace(/\./g, '')),
-                discount: parseFloat(document.getElementById('discount').value || 0),
-                grandTotal: parseFloat(document.getElementById('grand-total').innerHTML.replace('Rp ', '').replace(/\./g, '')),
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            
-            // Ambil semua item
-            const itemsTable = document.getElementById('items-body');
-            for (let i = 0; i < itemsTable.rows.length; i++) {
-                const itemName = itemsTable.rows[i].cells[1].querySelector('input').value || '';
-                const itemQty = parseFloat(itemsTable.rows[i].cells[2].querySelector('input').value || 0);
-                const itemPrice = parseFloat(itemsTable.rows[i].cells[3].querySelector('input').value || 0);
+            try {
+                // Ambil semua data dari formulir
+                const invoiceNumber = document.getElementById('invoice-number').value;
                 
-                if (itemName && itemQty > 0) {
-                    invoiceData.items.push({
-                        name: itemName,
-                        quantity: itemQty,
-                        price: itemPrice
-                    });
+                if (!invoiceNumber) {
+                    updateStatus("Nomor nota tidak boleh kosong!", true);
+                    return;
                 }
+                
+                // Buat objek data invoice yang akan disimpan
+                const invoiceData = {
+                    invoiceNumber: invoiceNumber,
+                    invoiceDate: document.getElementById('invoice-date').value || new Date().toISOString().split('T')[0],
+                    customerName: document.getElementById('customer-name').value || 'Pelanggan Umum',
+                    customerAddress: document.getElementById('customer-address').value || '',
+                    customerPhone: document.getElementById('customer-phone').value || '',
+                    paymentMethod: document.getElementById('payment-method').value,
+                    items: [],
+                    subtotal: parseCurrency(document.getElementById('subtotal').innerHTML),
+                    discount: parseFloat(document.getElementById('discount').value || 0),
+                    grandTotal: parseCurrency(document.getElementById('grand-total').innerHTML),
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                // Ambil semua item
+                const itemsTable = document.getElementById('items-body');
+                for (let i = 0; i < itemsTable.rows.length; i++) {
+                    const itemName = itemsTable.rows[i].cells[1].querySelector('input').value || '';
+                    const itemQty = parseFloat(itemsTable.rows[i].cells[2].querySelector('input').value || 0);
+                    const itemPrice = parseFloat(itemsTable.rows[i].cells[3].querySelector('input').value || 0);
+                    
+                    if (itemName && itemQty > 0) {
+                        invoiceData.items.push({
+                            name: itemName,
+                            quantity: itemQty,
+                            price: itemPrice,
+                            total: itemQty * itemPrice
+                        });
+                    }
+                }
+                
+                // Validasi data
+                if (invoiceData.items.length === 0) {
+                    updateStatus("Tidak ada item barang yang valid untuk disimpan!", true);
+                    return;
+                }
+                
+                console.log("Menyimpan nota:", invoiceData);
+                
+                // Simpan data ke Firestore
+                db.collection('invoices').doc(invoiceData.invoiceNumber).set(invoiceData)
+                    .then(() => {
+                        console.log("Nota berhasil disimpan");
+                        updateStatus("Nota berhasil disimpan!");
+                        
+                        // Reset form untuk nota baru
+                        const currentNumber = parseInt(invoiceData.invoiceNumber.replace('INV-', ''));
+                        const nextNumber = 'INV-' + ('000' + (currentNumber + 1)).slice(-3);
+                        document.getElementById('invoice-number').value = nextNumber;
+                        
+                        document.getElementById('customer-name').value = '';
+                        document.getElementById('customer-address').value = '';
+                        document.getElementById('customer-phone').value = '';
+                        
+                        const itemsBody = document.getElementById('items-body');
+                        while (itemsBody.rows.length > 0) {
+                            itemsBody.deleteRow(0);
+                        }
+                        addItem();
+                        
+                        // Reload daftar nota jika tab daftar nota aktif
+                        if (document.getElementById('invoiceList').classList.contains('active')) {
+                            loadInvoiceList();
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Error menyimpan nota:", error);
+                        updateStatus("Gagal menyimpan nota: " + error.message, true);
+                        alert("Detail error: " + JSON.stringify(error));
+                    });
+            } catch (e) {
+                console.error("Error dalam proses penyimpanan:", e);
+                updateStatus("Terjadi kesalahan: " + e.message, true);
             }
-            
-            console.log("Menyimpan nota:", invoiceData);
-            
-            // Simpan data ke Firestore
-            db.collection('invoices').doc(invoiceData.invoiceNumber).set(invoiceData)
-                .then(() => {
-                    console.log("Nota berhasil disimpan");
-                    updateStatus("Nota berhasil disimpan!");
-                    
-                    // Reset form untuk nota baru
-                    const currentNumber = parseInt(invoiceData.invoiceNumber.replace('INV-', ''));
-                    const nextNumber = 'INV-' + ('000' + (currentNumber + 1)).slice(-3);
-                    document.getElementById('invoice-number').value = nextNumber;
-                    
-                    document.getElementById('customer-name').value = '';
-                    document.getElementById('customer-address').value = '';
-                    document.getElementById('customer-phone').value = '';
-                    
-                    const itemsBody = document.getElementById('items-body');
-                    while (itemsBody.rows.length > 0) {
-                        itemsBody.deleteRow(0);
-                    }
-                    addItem();
-                    
-                    // Reload daftar nota jika tab daftar nota aktif
-                    if (document.getElementById('invoiceList').classList.contains('active')) {
-                        loadInvoiceList();
-                    }
-                })
-                .catch((error) => {
-                    console.error("Error menyimpan nota:", error);
-                    updateStatus("Gagal menyimpan nota: " + error.message, true);
-                });
         }
         
         // Fungsi untuk memuat daftar nota dari Firestore
@@ -680,6 +696,7 @@
                 var itemTotal = itemQty * itemPrice;
                 
                 printContent += `
+                    <tr>printContent += `
                     <tr>
                         <td style="border: 1px solid #ddd; padding: 8px;">${i + 1}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${itemName || '-'}</td>
