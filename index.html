@@ -303,23 +303,24 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
+    <!-- Gunakan Firebase Modular SDK -->
+    <script type="module">
+        // Import fungsi-fungsi yang diperlukan dari SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            doc, 
+            setDoc, 
+            getDoc, 
+            getDocs, 
+            deleteDoc, 
+            orderBy, 
+            query, 
+            serverTimestamp 
+        } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-    <script>
-        // Set tanggal hari ini sebagai default
-        document.getElementById('invoice-date').valueAsDate = new Date();
-        
-        // Update status bar
-        function updateStatus(message, isError = false) {
-            const statusBar = document.getElementById('status-bar');
-            statusBar.textContent = 'Status: ' + message;
-            statusBar.style.backgroundColor = isError ? '#f8d7da' : '#d4edda';
-            statusBar.style.color = isError ? '#721c24' : '#155724';
-        }
-        
-        // Konfigurasi Firebase yang benar dari konsol Firebase
+        // Konfigurasi Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCugcz9mTLRBM18LB00VCnOFkrA0mvTeU4",
             authDomain: "nota-1d8c3.firebaseapp.com",
@@ -331,27 +332,54 @@
         };
 
         // Inisialisasi Firebase
-        let db;
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Membuat variabel global untuk diakses di seluruh aplikasi
+        window.db = db;
+        window.firestoreCollection = collection;
+        window.firestoreDoc = doc;
+        window.firestoreSetDoc = setDoc;
+        window.firestoreGetDoc = getDoc;
+        window.firestoreGetDocs = getDocs;
+        window.firestoreDeleteDoc = deleteDoc;
+        window.firestoreOrderBy = orderBy;
+        window.firestoreQuery = query;
+        window.firestoreServerTimestamp = serverTimestamp;
+
+        // Update status
+        document.getElementById('status-bar').textContent = 'Status: Firebase berhasil diinisialisasi';
+        document.getElementById('status-bar').style.backgroundColor = '#d4edda';
+        document.getElementById('status-bar').style.color = '#155724';
+        
+        // Tes koneksi
         try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            console.log("Firebase berhasil diinisialisasi");
-            
-            // Tes koneksi
-            db.collection('connection-test').doc(Date.now().toString()).set({
+            await setDoc(doc(db, 'connection-test', Date.now().toString()), {
                 status: "Koneksi berhasil",
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            })
-            .then(() => {
-                updateStatus("Firebase berhasil diinisialisasi");
-            })
-            .catch(error => {
-                console.error("Error koneksi:", error);
-                updateStatus("Gagal terhubung ke database: " + error.message, true);
+                timestamp: new Date()
             });
+            console.log("Firebase berhasil terhubung");
         } catch (error) {
-            console.error("Error inisialisasi Firebase:", error);
-            updateStatus("Gagal menginisialisasi Firebase: " + error.message, true);
+            console.error("Error koneksi:", error);
+            document.getElementById('status-bar').textContent = 'Status: Gagal terhubung ke database: ' + error.message;
+            document.getElementById('status-bar').style.backgroundColor = '#f8d7da';
+            document.getElementById('status-bar').style.color = '#721c24';
+        }
+        
+        // Set tanggal hari ini
+        document.getElementById('invoice-date').valueAsDate = new Date();
+    </script>
+
+    <script>
+        // Set tanggal hari ini sebagai default
+        document.getElementById('invoice-date').valueAsDate = new Date();
+        
+        // Update status bar
+        function updateStatus(message, isError = false) {
+            const statusBar = document.getElementById('status-bar');
+            statusBar.textContent = 'Status: ' + message;
+            statusBar.style.backgroundColor = isError ? '#f8d7da' : '#d4edda';
+            statusBar.style.color = isError ? '#721c24' : '#155724';
         }
         
         // Fungsi untuk menambah item barang
@@ -454,8 +482,8 @@
             }
         }
         
-        // Fungsi untuk menyimpan nota ke Firestore - PERBAIKAN DISINI
-        function saveInvoice() {
+        // Fungsi untuk menyimpan nota ke Firestore (menggunakan API modular)
+        async function saveInvoice() {
             updateStatus("Menyimpan nota...");
             
             try {
@@ -479,7 +507,7 @@
                     subtotal: parseCurrency(document.getElementById('subtotal').innerHTML),
                     discount: parseFloat(document.getElementById('discount').value || 0),
                     grandTotal: parseCurrency(document.getElementById('grand-total').innerHTML),
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    createdAt: new Date()
                 };
                 
                 // Ambil semua item
@@ -507,146 +535,148 @@
                 
                 console.log("Menyimpan nota:", invoiceData);
                 
-                // Simpan data ke Firestore
-                db.collection('invoices').doc(invoiceData.invoiceNumber).set(invoiceData)
-                    .then(() => {
-                        console.log("Nota berhasil disimpan");
-                        updateStatus("Nota berhasil disimpan!");
-                        
-                        // Reset form untuk nota baru
-                        const currentNumber = parseInt(invoiceData.invoiceNumber.replace('INV-', ''));
-                        const nextNumber = 'INV-' + ('000' + (currentNumber + 1)).slice(-3);
-                        document.getElementById('invoice-number').value = nextNumber;
-                        
-                        document.getElementById('customer-name').value = '';
-                        document.getElementById('customer-address').value = '';
-                        document.getElementById('customer-phone').value = '';
-                        
-                        const itemsBody = document.getElementById('items-body');
-                        while (itemsBody.rows.length > 0) {
-                            itemsBody.deleteRow(0);
-                        }
-                        addItem();
-                        
-                        // Reload daftar nota jika tab daftar nota aktif
-                        if (document.getElementById('invoiceList').classList.contains('active')) {
-                            loadInvoiceList();
-                        }
-                    })
-                    .catch((error) => {
-                        console.error("Error menyimpan nota:", error);
-                        updateStatus("Gagal menyimpan nota: " + error.message, true);
-                        alert("Detail error: " + JSON.stringify(error));
-                    });
-            } catch (e) {
-                console.error("Error dalam proses penyimpanan:", e);
-                updateStatus("Terjadi kesalahan: " + e.message, true);
+                // Simpan data ke Firestore dengan modul Firebase baru
+                const docRef = window.firestoreDoc(window.db, 'invoices', invoiceData.invoiceNumber);
+                await window.firestoreSetDoc(docRef, invoiceData);
+                
+                console.log("Nota berhasil disimpan");
+                updateStatus("Nota berhasil disimpan!");
+                
+                // Reset form untuk nota baru
+                const currentNumber = parseInt(invoiceData.invoiceNumber.replace('INV-', ''));
+                const nextNumber = 'INV-' + ('000' + (currentNumber + 1)).slice(-3);
+                document.getElementById('invoice-number').value = nextNumber;
+                
+                document.getElementById('customer-name').value = '';
+                document.getElementById('customer-address').value = '';
+                document.getElementById('customer-phone').value = '';
+                
+                const itemsBody = document.getElementById('items-body');
+                while (itemsBody.rows.length > 0) {
+                    itemsBody.deleteRow(0);
+                }
+                addItem();
+                
+                // Reload daftar nota jika tab daftar nota aktif
+                if (document.getElementById('invoiceList').classList.contains('active')) {
+                    loadInvoiceList();
+                }
+            } catch (error) {
+                console.error("Error menyimpan nota:", error);
+                updateStatus("Gagal menyimpan nota: " + error.message, true);
+                alert("Detail error: " + JSON.stringify(error));
             }
         }
         
         // Fungsi untuk memuat daftar nota dari Firestore
-        function loadInvoiceList() {
+        async function loadInvoiceList() {
             updateStatus("Memuat daftar nota...");
             
             const tableBody = document.getElementById('invoice-list-body');
             tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Memuat data...</td></tr>';
             
-            db.collection('invoices').orderBy('createdAt', 'desc').get()
-                .then((querySnapshot) => {
-                    if (querySnapshot.empty) {
-                        tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Tidak ada data nota</td></tr>';
-                        updateStatus("Daftar nota kosong");
-                        return;
+            try {
+                const invoicesRef = window.firestoreCollection(window.db, 'invoices');
+                const q = window.firestoreQuery(invoicesRef);
+                const querySnapshot = await window.firestoreGetDocs(q);
+                
+                if (querySnapshot.empty) {
+                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Tidak ada data nota</td></tr>';
+                    updateStatus("Daftar nota kosong");
+                    return;
+                }
+                
+                tableBody.innerHTML = '';
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    
+                    // Format tanggal
+                    let formattedDate = 'N/A';
+                    if (data.invoiceDate) {
+                        formattedDate = formatDate(data.invoiceDate);
                     }
                     
-                    tableBody.innerHTML = '';
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        
-                        // Format tanggal
-                        let formattedDate = 'N/A';
-                        if (data.invoiceDate) {
-                            formattedDate = formatDate(data.invoiceDate);
-                        }
-                        
-                        const row = tableBody.insertRow();
-                        row.innerHTML = `
-                            <td>${data.invoiceNumber || 'N/A'}</td>
-                            <td>${formattedDate}</td>
-                            <td>${data.customerName || 'N/A'}</td>
-                            <td>${formatCurrency(data.grandTotal || 0)}</td>
-                            <td>Lunas</td>
-                            <td>
-                                <button onclick="viewInvoice('${data.invoiceNumber}')" style="padding: 5px; background-color: #2196F3;">Lihat</button>
-                                <button onclick="printInvoiceFromDB('${data.invoiceNumber}')" style="padding: 5px; background-color: #4CAF50;">Cetak</button>
-                                <button onclick="deleteInvoice('${data.invoiceNumber}')" style="padding: 5px; background-color: #f44336;">Hapus</button>
-                            </td>
-                        `;
-                    });
-                    
-                    updateStatus("Daftar nota berhasil dimuat");
-                })
-                .catch((error) => {
-                    console.error("Error memuat daftar nota:", error);
-                    tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Error: ${error.message}</td></tr>`;
-                    updateStatus("Gagal memuat daftar nota: " + error.message, true);
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `
+                        <td>${data.invoiceNumber || 'N/A'}</td>
+                        <td>${formattedDate}</td>
+                        <td>${data.customerName || 'N/A'}</td>
+                        <td>${formatCurrency(data.grandTotal || 0)}</td>
+                        <td>Lunas</td>
+                        <td>
+                            <button onclick="viewInvoice('${data.invoiceNumber}')" style="padding: 5px; background-color: #2196F3;">Lihat</button>
+                            <button onclick="printInvoiceFromDB('${data.invoiceNumber}')" style="padding: 5px; background-color: #4CAF50;">Cetak</button>
+                            <button onclick="deleteInvoice('${data.invoiceNumber}')" style="padding: 5px; background-color: #f44336;">Hapus</button>
+                        </td>
+                    `;
                 });
+                
+                updateStatus("Daftar nota berhasil dimuat");
+            } catch (error) {
+                console.error("Error memuat daftar nota:", error);
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Error: ${error.message}</td></tr>`;
+                updateStatus("Gagal memuat daftar nota: " + error.message, true);
+            }
         }
         
         // Fungsi untuk melihat nota
-        function viewInvoice(invoiceNumber) {
+        async function viewInvoice(invoiceNumber) {
             updateStatus("Memuat nota " + invoiceNumber + "...");
             
-            db.collection('invoices').doc(invoiceNumber).get()
-                .then((doc) => {
-                    if (!doc.exists) {
-                        updateStatus("Nota tidak ditemukan!", true);
-                        return;
-                    }
-                    
-                    const data = doc.data();
-                    
-                    // Isi formulir dengan data nota
-                    document.getElementById('invoice-number').value = data.invoiceNumber;
-                    document.getElementById('invoice-date').value = data.invoiceDate;
-                    document.getElementById('customer-name').value = data.customerName;
-                    document.getElementById('customer-address').value = data.customerAddress || '';
-                    document.getElementById('customer-phone').value = data.customerPhone || '';
-                    document.getElementById('payment-method').value = data.paymentMethod;
-                    document.getElementById('discount').value = data.discount;
-                    
-                    // Bersihkan item yang ada
-                    const itemsBody = document.getElementById('items-body');
-                    while (itemsBody.rows.length > 0) {
-                        itemsBody.deleteRow(0);
-                    }
-                    
-                    // Tambahkan item dari nota
-                    if (data.items && data.items.length > 0) {
-                        data.items.forEach((item, index) => {
-                            const row = itemsBody.insertRow(index);
-                            row.innerHTML = `
-                                <td>${index + 1}</td>
-                                <td><input type="text" name="item-name[]" value="${item.name}" placeholder="Nama barang"></td>
-                                <td><input type="number" name="item-quantity[]" value="${item.quantity}" min="1" onchange="calculateItemTotal(this)"></td>
-                                <td><input type="number" name="item-price[]" value="${item.price}" min="0" onchange="calculateItemTotal(this)"></td>
-                                <td class="item-total">${formatCurrency(item.quantity * item.price)}</td>
-                                <td><button onclick="removeItem(this)" style="padding: 5px; background-color: #f44336;">X</button></td>
-                            `;
-                        });
-                    } else {
-                        addItem(); // Tambahkan item kosong jika tidak ada
-                    }
-                    
-                    calculateTotal();
-                    openTab('createInvoice');
-                    updateStatus("Nota " + invoiceNumber + " berhasil dimuat");
-                })
-                .catch((error) => {
-                    console.error("Error melihat nota:", error);
-                    updateStatus("Gagal memuat nota: " + error.message, true);
-                });
+            try {
+                const docRef = window.firestoreDoc(window.db, 'invoices', invoiceNumber);
+                const docSnap = await window.firestoreGetDoc(docRef);
+                
+                if (!docSnap.exists()) {
+                    updateStatus("Nota tidak ditemukan!", true);
+                    return;
+                }
+                
+                const data = docSnap.data();
+                
+                // Isi formulir dengan data nota
+                document.getElementById('invoice-number').value = data.invoiceNumber;
+                document.getElementById('invoice-date').value = data.invoiceDate;
+                document.getElementById('customer-name').value = data.customerName;
+                document.getElementById('customer-address').value = data.customerAddress || '';
+                document.getElementById('customer-phone').value = data.customerPhone || '';
+                document.getElementById('payment-method').value = data.paymentMethod;
+                document.getElementById('discount').value = data.discount;
+                
+                // Bersihkan item yang ada
+                const itemsBody = document.getElementById('items-body');
+                while (itemsBody.rows.length > 0) {
+                    itemsBody.deleteRow(0);
+                }
+                
+                // Tambahkan item dari nota
+                if (data.items && data.items.length > 0) {
+                    data.items.forEach((item, index) => {
+                        const row = itemsBody.insertRow(index);
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td><input type="text" name="item-name[]" value="${item.name}" placeholder="Nama barang"></td>
+                            <td><input type="number" name="item-quantity[]" value="${item.quantity}" min="1" onchange="calculateItemTotal(this)"></td>
+                            <td><input type="number" name="item-price[]" value="${item.price}" min="0" onchange="calculateItemTotal(this)"></td>
+                            <td class="item-total">${formatCurrency(item.quantity * item.price)}</td>
+                            <td><button onclick="removeItem(this)" style="padding: 5px; background-color: #f44336;">X</button></td>
+                        `;
+                    });
+                } else {
+                    addItem(); // Tambahkan item kosong jika tidak ada
+                }
+                
+                calculateTotal();
+                openTab('createInvoice');
+                updateStatus("Nota " + invoiceNumber + " berhasil dimuat");
+            } catch (error) {
+                console.error("Error melihat nota:", error);
+                updateStatus("Gagal memuat nota: " + error.message, true);
+            }
         }
+        
+        // Membuat fungsi global untuk bisa diakses dari HTML
+        window.viewInvoice = viewInvoice;
         
         // Fungsi untuk mencetak nota
         function printInvoice() {
@@ -674,7 +704,7 @@
                     <div><strong>Telepon:</strong> ${document.getElementById('customer-phone').value || '-'}</div>
                 </div>
                 
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom:<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                     <thead>
                         <tr>
                             <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">No.</th>
@@ -696,7 +726,6 @@
                 var itemTotal = itemQty * itemPrice;
                 
                 printContent += `
-                    <tr>printContent += `
                     <tr>
                         <td style="border: 1px solid #ddd; padding: 8px;">${i + 1}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${itemName || '-'}</td>
@@ -768,51 +797,55 @@
         }
         
         // Fungsi untuk mencetak nota dari database
-        function printInvoiceFromDB(invoiceNumber) {
+        async function printInvoiceFromDB(invoiceNumber) {
             updateStatus("Memuat nota untuk dicetak...");
             
-            db.collection('invoices').doc(invoiceNumber).get()
-                .then((doc) => {
-                    if (!doc.exists) {
-                        updateStatus("Nota tidak ditemukan!", true);
-                        return;
-                    }
-                    
-                    viewInvoice(invoiceNumber);
-                    
-                    // Tunggu sebentar agar data terload, lalu cetak
-                    setTimeout(() => {
-                        printInvoice();
-                    }, 1000);
-                })
-                .catch((error) => {
-                    console.error("Error mencetak nota:", error);
-                    updateStatus("Gagal memuat nota untuk dicetak: " + error.message, true);
-                });
+            try {
+                await viewInvoice(invoiceNumber);
+                
+                // Tunggu sebentar agar data terload, lalu cetak
+                setTimeout(() => {
+                    printInvoice();
+                }, 1000);
+            } catch (error) {
+                console.error("Error mencetak nota:", error);
+                updateStatus("Gagal memuat nota untuk dicetak: " + error.message, true);
+            }
+        }
         
+        // Membuat fungsi global untuk bisa diakses dari HTML
+        window.printInvoice = printInvoice;
+        window.printInvoiceFromDB = printInvoiceFromDB;
         
         // Fungsi untuk menghapus nota
-        function deleteInvoice(invoiceNumber) {
+        async function deleteInvoice(invoiceNumber) {
             if (confirm(`Apakah Anda yakin ingin menghapus nota ${invoiceNumber}?`)) {
                 updateStatus("Menghapus nota...");
                 
-                db.collection('invoices').doc(invoiceNumber).delete()
-                    .then(() => {
-                        updateStatus("Nota berhasil dihapus");
-                        loadInvoiceList();
-                    })
-                    .catch((error) => {
-                        console.error("Error menghapus nota:", error);
-                        updateStatus("Gagal menghapus nota: " + error.message, true);
-                    });
+                try {
+                    const docRef = window.firestoreDoc(window.db, 'invoices', invoiceNumber);
+                    await window.firestoreDeleteDoc(docRef);
+                    
+                    updateStatus("Nota berhasil dihapus");
+                    loadInvoiceList();
+                } catch (error) {
+                    console.error("Error menghapus nota:", error);
+                    updateStatus("Gagal menghapus nota: " + error.message, true);
+                }
             }
         }
+        
+        // Membuat fungsi global untuk bisa diakses dari HTML
+        window.deleteInvoice = deleteInvoice;
         
         // Mengirim nota ke pelanggan (implementasi sederhana)
         function sendInvoice() {
             var customerName = document.getElementById('customer-name').value || 'pelanggan';
             updateStatus(`Nota telah dikirim ke ${customerName} melalui email/WhatsApp!`);
         }
+        
+        // Membuat fungsi global untuk bisa diakses dari HTML
+        window.sendInvoice = sendInvoice;
         
         // Format tanggal
         function formatDate(dateString) {
@@ -825,60 +858,76 @@
         }
         
         // Fungsi untuk menyimpan pengaturan ke Firestore
-        function saveSettings() {
+        async function saveSettings() {
             updateStatus("Menyimpan pengaturan...");
             
-            const companyName = document.getElementById('settings-company-name').value;
-            const companyAddress = document.getElementById('settings-company-address').value;
-            const companyPhone = document.getElementById('settings-company-phone').value;
-            
-            // Update di lokal
-            document.getElementById('company-name').innerHTML = companyName;
-            document.getElementById('company-address').innerHTML = companyAddress;
-            document.getElementById('company-contact').innerHTML = `Telp: ${companyPhone}`;
-            
-            // Simpan ke Firestore
-            db.collection('settings').doc('companyInfo').set({
-                name: companyName,
-                address: companyAddress,
-                phone: companyPhone,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            })
-            .then(() => {
+            try {
+                const companyName = document.getElementById('settings-company-name').value;
+                const companyAddress = document.getElementById('settings-company-address').value;
+                const companyPhone = document.getElementById('settings-company-phone').value;
+                
+                // Update di lokal
+                document.getElementById('company-name').innerHTML = companyName;
+                document.getElementById('company-address').innerHTML = companyAddress;
+                document.getElementById('company-contact').innerHTML = `Telp: ${companyPhone}`;
+                
+                // Simpan ke Firestore
+                const docRef = window.firestoreDoc(window.db, 'settings', 'companyInfo');
+                await window.firestoreSetDoc(docRef, {
+                    name: companyName,
+                    address: companyAddress,
+                    phone: companyPhone,
+                    updatedAt: new Date()
+                });
+                
                 updateStatus("Pengaturan toko berhasil disimpan!");
                 openTab('createInvoice');
-            })
-            .catch((error) => {
+            } catch (error) {
                 console.error("Error menyimpan pengaturan:", error);
                 updateStatus("Gagal menyimpan pengaturan: " + error.message, true);
-            });
+            }
         }
         
+        // Membuat fungsi global untuk bisa diakses dari HTML
+        window.saveSettings = saveSettings;
+        
         // Fungsi untuk memuat pengaturan dari Firestore
-        function loadSettings() {
-            db.collection('settings').doc('companyInfo').get()
-                .then((doc) => {
-                    if (doc.exists) {
-                        const data = doc.data();
-                        
-                        // Update pengaturan di form
-                        document.getElementById('settings-company-name').value = data.name;
-                        document.getElementById('settings-company-address').value = data.address;
-                        document.getElementById('settings-company-phone').value = data.phone;
-                        
-                        // Update di header
-                        document.getElementById('company-name').innerHTML = data.name;
-                        document.getElementById('company-address').innerHTML = data.address;
-                        document.getElementById('company-contact').innerHTML = `Telp: ${data.phone}`;
-                        
-                        updateStatus("Pengaturan berhasil dimuat");
-                    }
-                })
-                .catch((error) => {
-                    console.error("Error memuat pengaturan:", error);
-                    updateStatus("Gagal memuat pengaturan: " + error.message, true);
-                });
+        async function loadSettings() {
+            try {
+                const docRef = window.firestoreDoc(window.db, 'settings', 'companyInfo');
+                const docSnap = await window.firestoreGetDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    
+                    // Update pengaturan di form
+                    document.getElementById('settings-company-name').value = data.name;
+                    document.getElementById('settings-company-address').value = data.address;
+                    document.getElementById('settings-company-phone').value = data.phone;
+                    
+                    // Update di header
+                    document.getElementById('company-name').innerHTML = data.name;
+                    document.getElementById('company-address').innerHTML = data.address;
+                    document.getElementById('company-contact').innerHTML = `Telp: ${data.phone}`;
+                    
+                    updateStatus("Pengaturan berhasil dimuat");
+                }
+            } catch (error) {
+                console.error("Error memuat pengaturan:", error);
+                updateStatus("Gagal memuat pengaturan: " + error.message, true);
+            }
         }
+        
+        // Buat fungsi global untuk diakses dari script module
+        window.loadSettings = loadSettings;
+        window.addItem = addItem;
+        window.removeItem = removeItem;
+        window.calculateItemTotal = calculateItemTotal;
+        window.calculateTotal = calculateTotal;
+        window.formatCurrency = formatCurrency;
+        window.parseCurrency = parseCurrency;
+        window.openTab = openTab;
+        window.loadInvoiceList = loadInvoiceList;
         
         // Jalankan saat halaman dimuat
         document.addEventListener('DOMContentLoaded', function() {
