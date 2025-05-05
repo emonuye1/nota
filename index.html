@@ -1,17 +1,324 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-    <title>Tes Firebase</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Nota Online</title>
+    <link rel="icon" href="data:,"> <!-- Menghindari error favicon 404 -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .customer-info, .invoice-info {
+            width: 48%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .total-section {
+            margin-top: 20px;
+            text-align: right;
+        }
+        .total-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 5px;
+        }
+        .total-label {
+            width: 150px;
+            font-weight: bold;
+            margin-right: 20px;
+        }
+        .total-value {
+            width: 100px;
+            text-align: right;
+        }
+        .grand-total {
+            font-weight: bold;
+            font-size: 18px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px solid #000;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+        .actions {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .add-item-button {
+            margin-bottom: 20px;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background-color: #f2f2f2;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: white;
+            border-bottom: 1px solid white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+        }
+        .status-bar {
+            background-color: #f2f2f2;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Tes Firebase</h1>
-    <button id="testButton">Tes Koneksi Firebase</button>
-    <div id="result"></div>
+    <div class="container">
+        <div class="status-bar" id="status-bar">Status: Menghubungkan ke database...</div>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="openTab('createInvoice')">Buat Nota</div>
+            <div class="tab" onclick="openTab('invoiceList')">Daftar Nota</div>
+            <div class="tab" onclick="openTab('settings')">Pengaturan</div>
+        </div>
+        
+        <div id="createInvoice" class="tab-content active">
+            <div class="header">
+                <div class="logo" id="company-name">Emon Semongko</div>
+                <div id="company-address">Lokasi Metro</div>
+                <div id="company-contact">Telp: 082379821111</div>
+            </div>
+            
+            <div class="info">
+                <div class="customer-info">
+                    <h3>Informasi Pelanggan</h3>
+                    <div class="form-group">
+                        <label for="customer-name">Nama Pelanggan</label>
+                        <input type="text" id="customer-name">
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-address">Alamat</label>
+                        <textarea id="customer-address" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-phone">No. Telepon</label>
+                        <input type="text" id="customer-phone">
+                    </div>
+                </div>
+                
+                <div class="invoice-info">
+                    <h3>Informasi Nota</h3>
+                    <div class="form-group">
+                        <label for="invoice-number">Nomor Nota</label>
+                        <input type="text" id="invoice-number" value="INV-001">
+                    </div>
+                    <div class="form-group">
+                        <label for="invoice-date">Tanggal</label>
+                        <input type="date" id="invoice-date">
+                    </div>
+                    <div class="form-group">
+                        <label for="payment-method">Metode Pembayaran</label>
+                        <select id="payment-method">
+                            <option value="cash">Tunai</option>
+                            <option value="transfer">Transfer Bank</option>
+                            <option value="credit-card">Kartu Kredit</option>
+                            <option value="e-wallet">E-Wallet</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Detail Barang</h3>
+            <button class="add-item-button" onclick="addItem()">+ Tambah Barang</button>
+            
+            <table id="items-table">
+                <thead>
+                    <tr>
+                        <th style="width: 5%">No.</th>
+                        <th style="width: 35%">Nama Barang</th>
+                        <th style="width: 15%">Jumlah</th>
+                        <th style="width: 20%">Harga Satuan</th>
+                        <th style="width: 20%">Total</th>
+                        <th style="width: 5%">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="items-body">
+                    <tr>
+                        <td>1</td>
+                        <td><input type="text" name="item-name[]" placeholder="Nama barang"></td>
+                        <td><input type="number" name="item-quantity[]" placeholder="Jumlah" min="1" onchange="calculateItemTotal(this)"></td>
+                        <td><input type="number" name="item-price[]" placeholder="Harga" min="0" onchange="calculateItemTotal(this)"></td>
+                        <td class="item-total">0</td>
+                        <td><button onclick="removeItem(this)" style="padding: 5px; background-color: #f44336;">X</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="total-section">
+                <div class="total-row">
+                    <div class="total-label">Subtotal</div>
+                    <div class="total-value" id="subtotal">Rp 0</div>
+                </div>
+                <div class="total-row">
+                    <div class="total-label">Diskon</div>
+                    <div class="total-value">
+                        <input type="number" id="discount" value="0" min="0" onchange="calculateTotal()">
+                    </div>
+                </div>
+                <div class="total-row grand-total">
+                    <div class="total-label">TOTAL</div>
+                    <div class="total-value" id="grand-total">Rp 0</div>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button onclick="saveInvoice()">Simpan Nota</button>
+                <button onclick="printInvoice()">Cetak Nota</button>
+                <button onclick="sendInvoice()">Kirim ke Pelanggan</button>
+            </div>
+        </div>
+        
+        <div id="invoiceList" class="tab-content">
+            <h2>Daftar Nota</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>No. Nota</th>
+                        <th>Tanggal</th>
+                        <th>Pelanggan</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="invoice-list-body">
+                    <tr>
+                        <td colspan="6" style="text-align: center;">Memuat data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div id="settings" class="tab-content">
+            <h2>Pengaturan Toko</h2>
+            <div class="form-group">
+                <label for="settings-company-name">Nama Toko</label>
+                <input type="text" id="settings-company-name" value="Emon Semongko">
+            </div>
+            <div class="form-group">
+                <label for="settings-company-address">Alamat Toko</label>
+                <textarea id="settings-company-address" rows="3">Lokasi Metro</textarea>
+            </div>
+            <div class="form-group">
+                <label for="settings-company-phone">No. Telepon</label>
+                <input type="text" id="settings-company-phone" value="082379821111">
+            </div>
+            <button onclick="saveSettings()">Simpan Pengaturan</button>
+        </div>
+        
+        <div class="footer">
+            <p>Terima kasih atas kepercayaan Anda berbelanja di toko kami.</p>
+            <p>© 2025 Aplikasi Nota By Firman</p>
+        </div>
+    </div>
 
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
 
     <script>
+        // Set tanggal hari ini sebagai default
+        document.getElementById('invoice-date').valueAsDate = new Date();
+        
+        // Update status bar
+        function updateStatus(message, isError = false) {
+            const statusBar = document.getElementById('status-bar');
+            statusBar.textContent = 'Status: ' + message;
+            statusBar.style.backgroundColor = isError ? '#f8d7da' : '#d4edda';
+            statusBar.style.color = isError ? '#721c24' : '#155724';
+        }
+        
         // Konfigurasi Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCugcz9mTLRBM18LB00VCnOFkrA0mvTeU4",
@@ -24,33 +331,558 @@
         };
 
         // Inisialisasi Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        // Tambahkan event listener ke button
-        document.getElementById('testButton').addEventListener('click', function() {
-            // Tes simpan data ke Firestore
-            db.collection('test').doc('test' + Date.now()).set({
-                timestamp: new Date(),
-                message: 'Tes berhasil pada ' + new Date().toString()
+        let db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            console.log("Firebase berhasil diinisialisasi");
+            
+            // Tes koneksi
+            db.collection('connection-test').doc(Date.now().toString()).set({
+                status: "Koneksi berhasil",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
             })
             .then(() => {
-                document.getElementById('result').innerHTML = 'Berhasil menyimpan data ke Firebase!<br>Waktu: ' + new Date().toString();
-                
-                // Ambil data yang baru saja disimpan
-                return db.collection('test').get();
+                updateStatus("Terhubung ke database");
             })
-            .then((querySnapshot) => {
-                let html = '<h3>Data di Firestore:</h3>';
-                querySnapshot.forEach((doc) => {
-                    html += '<p>' + doc.id + ' => ' + JSON.stringify(doc.data()) + '</p>';
+            .catch(error => {
+                console.error("Error koneksi:", error);
+                updateStatus("Gagal terhubung ke database: " + error.message, true);
+            });
+        } catch (error) {
+            console.error("Error inisialisasi Firebase:", error);
+            updateStatus("Gagal menginisialisasi Firebase: " + error.message, true);
+        }
+        
+        // Fungsi untuk menambah item barang
+        function addItem() {
+            var table = document.getElementById('items-body');
+            var rowCount = table.rows.length;
+            var row = table.insertRow(rowCount);
+            
+            row.innerHTML = `
+                <td>${rowCount + 1}</td>
+                <td><input type="text" name="item-name[]" placeholder="Nama barang"></td>
+                <td><input type="number" name="item-quantity[]" placeholder="Jumlah" min="1" onchange="calculateItemTotal(this)"></td>
+                <td><input type="number" name="item-price[]" placeholder="Harga" min="0" onchange="calculateItemTotal(this)"></td>
+                <td class="item-total">0</td>
+                <td><button onclick="removeItem(this)" style="padding: 5px; background-color: #f44336;">X</button></td>
+            `;
+            
+            calculateTotal();
+        }
+        
+        // Fungsi untuk menghapus item barang
+        function removeItem(btn) {
+            var row = btn.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+            
+            // Memperbarui nomor urut
+            var table = document.getElementById('items-body');
+            for (var i = 0; i < table.rows.length; i++) {
+                table.rows[i].cells[0].innerHTML = i + 1;
+            }
+            
+            calculateTotal();
+        }
+        
+        // Menghitung total harga per item
+        function calculateItemTotal(input) {
+            var row = input.parentNode.parentNode;
+            var quantity = row.cells[2].querySelector('input').value || 0;
+            var price = row.cells[3].querySelector('input').value || 0;
+            var total = quantity * price;
+            
+            row.cells[4].innerHTML = formatCurrency(total);
+            
+            calculateTotal();
+        }
+        
+        // Menghitung total keseluruhan
+        function calculateTotal() {
+            var table = document.getElementById('items-body');
+            var subtotal = 0;
+            
+            for (var i = 0; i < table.rows.length; i++) {
+                var quantity = table.rows[i].cells[2].querySelector('input').value || 0;
+                var price = table.rows[i].cells[3].querySelector('input').value || 0;
+                subtotal += quantity * price;
+            }
+            
+            var discount = document.getElementById('discount').value || 0;
+            var grandTotal = subtotal - discount;
+            
+            document.getElementById('subtotal').innerHTML = formatCurrency(subtotal);
+            document.getElementById('grand-total').innerHTML = formatCurrency(grandTotal);
+        }
+        
+        // Format angka ke format mata uang
+        function formatCurrency(amount) {
+            return 'Rp ' + amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+        
+        // Mengganti tab yang aktif
+        function openTab(tabName) {
+            var i, tabContent, tabLinks;
+            
+            tabContent = document.getElementsByClassName('tab-content');
+            for (i = 0; i < tabContent.length; i++) {
+                tabContent[i].classList.remove('active');
+            }
+            
+            tabLinks = document.getElementsByClassName('tab');
+            for (i = 0; i < tabLinks.length; i++) {
+                tabLinks[i].classList.remove('active');
+            }
+            
+            document.getElementById(tabName).classList.add('active');
+            
+            // Temukan tombol tab yang sesuai dengan tabName dan tambahkan class active
+            for (i = 0; i < tabLinks.length; i++) {
+                if (tabLinks[i].textContent.trim().toLowerCase().replace(/\s+/g, '') === tabName.toLowerCase().replace(/\s+/g, '')) {
+                    tabLinks[i].classList.add('active');
+                    break;
+                }
+            }
+            
+            // Jika membuka tab daftar nota, muat data
+            if (tabName === 'invoiceList') {
+                loadInvoiceList();
+            }
+        }
+        
+        // Fungsi untuk menyimpan nota ke Firestore
+        function saveInvoice() {
+            updateStatus("Menyimpan nota...");
+            
+            // Ambil semua data dari formulir
+            const invoiceNumber = document.getElementById('invoice-number').value;
+            
+            if (!invoiceNumber) {
+                updateStatus("Nomor nota tidak boleh kosong!", true);
+                return;
+            }
+            
+            // Buat objek data invoice yang akan disimpan
+            const invoiceData = {
+                invoiceNumber: invoiceNumber,
+                invoiceDate: document.getElementById('invoice-date').value,
+                customerName: document.getElementById('customer-name').value || 'Pelanggan Umum',
+                customerAddress: document.getElementById('customer-address').value || '',
+                customerPhone: document.getElementById('customer-phone').value || '',
+                paymentMethod: document.getElementById('payment-method').value,
+                items: [],
+                subtotal: parseFloat(document.getElementById('subtotal').innerHTML.replace('Rp ', '').replace(/\./g, '')),
+                discount: parseFloat(document.getElementById('discount').value || 0),
+                grandTotal: parseFloat(document.getElementById('grand-total').innerHTML.replace('Rp ', '').replace(/\./g, '')),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            // Ambil semua item
+            const itemsTable = document.getElementById('items-body');
+            for (let i = 0; i < itemsTable.rows.length; i++) {
+                const itemName = itemsTable.rows[i].cells[1].querySelector('input').value || '';
+                const itemQty = parseFloat(itemsTable.rows[i].cells[2].querySelector('input').value || 0);
+                const itemPrice = parseFloat(itemsTable.rows[i].cells[3].querySelector('input').value || 0);
+                
+                if (itemName && itemQty > 0) {
+                    invoiceData.items.push({
+                        name: itemName,
+                        quantity: itemQty,
+                        price: itemPrice
+                    });
+                }
+            }
+            
+            console.log("Menyimpan nota:", invoiceData);
+            
+            // Simpan data ke Firestore
+            db.collection('invoices').doc(invoiceData.invoiceNumber).set(invoiceData)
+                .then(() => {
+                    console.log("Nota berhasil disimpan");
+                    updateStatus("Nota berhasil disimpan!");
+                    
+                    // Reset form untuk nota baru
+                    const currentNumber = parseInt(invoiceData.invoiceNumber.replace('INV-', ''));
+                    const nextNumber = 'INV-' + ('000' + (currentNumber + 1)).slice(-3);
+                    document.getElementById('invoice-number').value = nextNumber;
+                    
+                    document.getElementById('customer-name').value = '';
+                    document.getElementById('customer-address').value = '';
+                    document.getElementById('customer-phone').value = '';
+                    
+                    const itemsBody = document.getElementById('items-body');
+                    while (itemsBody.rows.length > 0) {
+                        itemsBody.deleteRow(0);
+                    }
+                    addItem();
+                    
+                    // Reload daftar nota jika tab daftar nota aktif
+                    if (document.getElementById('invoiceList').classList.contains('active')) {
+                        loadInvoiceList();
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error menyimpan nota:", error);
+                    updateStatus("Gagal menyimpan nota: " + error.message, true);
                 });
-                document.getElementById('result').innerHTML += html;
+        }
+        
+        // Fungsi untuk memuat daftar nota dari Firestore
+        function loadInvoiceList() {
+            updateStatus("Memuat daftar nota...");
+            
+            const tableBody = document.getElementById('invoice-list-body');
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Memuat data...</td></tr>';
+            
+            db.collection('invoices').orderBy('createdAt', 'desc').get()
+                .then((querySnapshot) => {
+                    if (querySnapshot.empty) {
+                        tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Tidak ada data nota</td></tr>';
+                        updateStatus("Daftar nota kosong");
+                        return;
+                    }
+                    
+                    tableBody.innerHTML = '';
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        
+                        // Format tanggal
+                        let formattedDate = 'N/A';
+                        if (data.invoiceDate) {
+                            formattedDate = formatDate(data.invoiceDate);
+                        }
+                        
+                        const row = tableBody.insertRow();
+                        row.innerHTML = `
+                            <td>${data.invoiceNumber || 'N/A'}</td>
+                            <td>${formattedDate}</td>
+                            <td>${data.customerName || 'N/A'}</td>
+                            <td>${formatCurrency(data.grandTotal || 0)}</td>
+                            <td>Lunas</td>
+                            <td>
+                                <button onclick="viewInvoice('${data.invoiceNumber}')" style="padding: 5px; background-color: #2196F3;">Lihat</button>
+                                <button onclick="printInvoiceFromDB('${data.invoiceNumber}')" style="padding: 5px; background-color: #4CAF50;">Cetak</button>
+                                <button onclick="deleteInvoice('${data.invoiceNumber}')" style="padding: 5px; background-color: #f44336;">Hapus</button>
+                            </td>
+                        `;
+                    });
+                    
+                    updateStatus("Daftar nota berhasil dimuat");
+                })
+                .catch((error) => {
+                    console.error("Error memuat daftar nota:", error);
+                    tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Error: ${error.message}</td></tr>`;
+                    updateStatus("Gagal memuat daftar nota: " + error.message, true);
+                });
+        }
+        
+        // Fungsi untuk melihat nota
+        function viewInvoice(invoiceNumber) {
+            updateStatus("Memuat nota " + invoiceNumber + "...");
+            
+            db.collection('invoices').doc(invoiceNumber).get()
+                .then((doc) => {
+                    if (!doc.exists) {
+                        updateStatus("Nota tidak ditemukan!", true);
+                        return;
+                    }
+                    
+                    const data = doc.data();
+                    
+                    // Isi formulir dengan data nota
+                    document.getElementById('invoice-number').value = data.invoiceNumber;
+                    document.getElementById('invoice-date').value = data.invoiceDate;
+                    document.getElementById('customer-name').value = data.customerName;
+                    document.getElementById('customer-address').value = data.customerAddress || '';
+                    document.getElementById('customer-phone').value = data.customerPhone || '';
+                    document.getElementById('payment-method').value = data.paymentMethod;
+                    document.getElementById('discount').value = data.discount;
+                    
+                    // Bersihkan item yang ada
+                    const itemsBody = document.getElementById('items-body');
+                    while (itemsBody.rows.length > 0) {
+                        itemsBody.deleteRow(0);
+                    }
+                    
+                    // Tambahkan item dari nota
+                    if (data.items && data.items.length > 0) {
+                        data.items.forEach((item, index) => {
+                            const row = itemsBody.insertRow(index);
+                            row.innerHTML = `
+                                <td>${index + 1}</td>
+                                <td><input type="text" name="item-name[]" value="${item.name}" placeholder="Nama barang"></td>
+                                <td><input type="number" name="item-quantity[]" value="${item.quantity}" min="1" onchange="calculateItemTotal(this)"></td>
+                                <td><input type="number" name="item-price[]" value="${item.price}" min="0" onchange="calculateItemTotal(this)"></td>
+                                <td class="item-total">${formatCurrency(item.quantity * item.price)}</td>
+                                <td><button onclick="removeItem(this)" style="padding: 5px; background-color: #f44336;">X</button></td>
+                            `;
+                        });
+                    } else {
+                        addItem(); // Tambahkan item kosong jika tidak ada
+                    }
+                    
+                    calculateTotal();
+                    openTab('createInvoice');
+                    updateStatus("Nota " + invoiceNumber + " berhasil dimuat");
+                })
+                .catch((error) => {
+                    console.error("Error melihat nota:", error);
+                    updateStatus("Gagal memuat nota: " + error.message, true);
+                });
+        }
+        
+        // Fungsi untuk mencetak nota
+        function printInvoice() {
+            // Menyimpan status tampilan saat ini
+            var container = document.querySelector('.container');
+            var originalContent = container.innerHTML;
+            
+            // Menyiapkan tampilan cetak
+            var printContent = `
+                <div class="header">
+                    <div class="logo" id="print-company-name">${document.getElementById('company-name').innerHTML}</div>
+                    <div id="print-company-address">${document.getElementById('company-address').innerHTML}</div>
+                    <div id="print-company-contact">${document.getElementById('company-contact').innerHTML}</div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <div><strong>Nomor Nota:</strong> ${document.getElementById('invoice-number').value}</div>
+                    <div><strong>Tanggal:</strong> ${formatDate(document.getElementById('invoice-date').value)}</div>
+                    <div><strong>Metode Pembayaran:</strong> ${document.getElementById('payment-method').options[document.getElementById('payment-method').selectedIndex].text}</div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <div><strong>Pelanggan:</strong> ${document.getElementById('customer-name').value || 'Pelanggan Umum'}</div>
+                    <div><strong>Alamat:</strong> ${document.getElementById('customer-address').value || '-'}</div>
+                    <div><strong>Telepon:</strong> ${document.getElementById('customer-phone').value || '-'}</div>
+                </div>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">No.</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Nama Barang</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Jumlah</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Harga Satuan</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            // Menambahkan item-item barang
+            var itemsTable = document.getElementById('items-body');
+            for (var i = 0; i < itemsTable.rows.length; i++) {
+                var itemName = itemsTable.rows[i].cells[1].querySelector('input').value;
+                var itemQty = itemsTable.rows[i].cells[2].querySelector('input').value;
+                var itemPrice = itemsTable.rows[i].cells[3].querySelector('input').value;
+                var itemTotal = itemQty * itemPrice;
+                
+                printContent += `
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${i + 1}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${itemName || '-'}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${itemQty}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(itemPrice)}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(itemTotal)}</td>
+                    </tr>
+                `;
+            }
+            
+            // Menambahkan informasi total
+            var subtotal = document.getElementById('subtotal').innerHTML;
+            var discount = document.getElementById('discount').value;
+            var grandTotal = document.getElementById('grand-total').innerHTML;
+            
+            printContent += `
+                    </tbody>
+                </table>
+                
+                <div style="text-align: right; margin-top: 20px;">
+                    <div style="margin-bottom: 5px;"><strong>Subtotal:</strong> ${subtotal}</div>
+                    <div style="margin-bottom: 5px;"><strong>Diskon:</strong> Rp ${discount}</div>
+                    <div style="font-size: 18px; font-weight: bold; margin-top: 10px; border-top: 2px solid #000; padding-top: 10px;">
+                        <strong>TOTAL:</strong> ${grandTotal}
+                    </div>
+                </div>
+                
+                <div style="margin-top: 50px; display: flex; justify-content: space-between;">
+                    <div style="text-align: center; width: 45%;">
+                        <div style="margin-bottom: 60px;">Penerima</div>
+                        <div style="border-top: 1px solid #000; padding-top: 5px;">${document.getElementById('customer-name').value || 'Pelanggan'}</div>
+                    </div>
+                    <div style="text-align: center; width: 45%;">
+                        <div style="margin-bottom: 60px;">Hormat Kami</div>
+                        <div style="border-top: 1px solid #000; padding-top: 5px;">${document.getElementById('company-name').innerHTML}</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 50px; text-align: center; font-size: 14px; color: #666;">
+                    <p>Terima kasih atas kepercayaan Anda berbelanja di toko kami.</p>
+                </div>
+            `;
+            
+            // Mengganti konten untuk mencetak
+            container.innerHTML = printContent;
+            
+            // Mencetak
+            setTimeout(function() {
+                window.print();
+                
+                // Mengembalikan tampilan asli setelah mencetak
+                setTimeout(function() {
+                    container.innerHTML = originalContent;
+                    
+                    // Menginisialisasi ulang event handlers
+                    document.getElementById('invoice-date').valueAsDate = new Date();
+                    calculateTotal();
+                    
+                    // Menginisialisasi ulang tab handlers
+                    var tabs = document.getElementsByClassName('tab');
+                    for (var i = 0; i < tabs.length; i++) {
+                        tabs[i].onclick = function() {
+                            var tabName = this.textContent.trim().toLowerCase().replace(/\s+/g, '');
+                            openTab(tabName);
+                        };
+                    }
+                }, 500);
+            }, 500);
+        }
+        
+        // Fungsi untuk mencetak nota dari database
+        function printInvoiceFromDB(invoiceNumber) {
+            updateStatus("Memuat nota untuk dicetak...");
+            
+            db.collection('invoices').doc(invoiceNumber).get()
+                .then((doc) => {
+                    if (!doc.exists) {
+                        updateStatus("Nota tidak ditemukan!", true);
+                        return;
+                    }
+                    
+                    viewInvoice(invoiceNumber);
+                    
+                    // Tunggu sebentar agar data terload, lalu cetak
+                    setTimeout(() => {
+                        printInvoice();
+                    }, 1000);
+                })
+                .catch((error) => {
+                    console.error("Error mencetak nota:", error);
+                    updateStatus("Gagal memuat nota untuk dicetak: " + error.message, true);
+                });
+        }
+        
+        // Fungsi untuk menghapus nota
+        function deleteInvoice(invoiceNumber) {
+            if (confirm(`Apakah Anda yakin ingin menghapus nota ${invoiceNumber}?`)) {
+                updateStatus("Menghapus nota...");
+                
+                db.collection('invoices').doc(invoiceNumber).delete()
+                    .then(() => {
+                        updateStatus("Nota berhasil dihapus");
+                        loadInvoiceList();
+                    })
+                    .catch((error) => {
+                        console.error("Error menghapus nota:", error);
+                        updateStatus("Gagal menghapus nota: " + error.message, true);
+                    });
+            }
+        }
+        
+        // Mengirim nota ke pelanggan (implementasi sederhana)
+        function sendInvoice() {
+            var customerName = document.getElementById('customer-name').value || 'pelanggan';
+            updateStatus(`Nota telah dikirim ke ${customerName} melalui email/WhatsApp!`);
+        }
+        
+        // Format tanggal
+        function formatDate(dateString) {
+            var date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        }
+        
+        // Fungsi untuk menyimpan pengaturan ke Firestore
+        function saveSettings() {
+            updateStatus("Menyimpan pengaturan...");
+            
+            const companyName = document.getElementById('settings-company-name').value;
+            const companyAddress = document.getElementById('settings-company-address').value;
+            const companyPhone = document.getElementById('settings-company-phone').value;
+            
+            // Update di lokal
+            document.getElementById('company-name').innerHTML = companyName;
+            document.getElementById('company-address').innerHTML = companyAddress;
+            document.getElementById('company-contact').innerHTML = `Telp: ${companyPhone}`;
+            
+            // Simpan ke Firestore
+            db.collection('settings').doc('companyInfo').set({
+                name: companyName,
+                address: companyAddress,
+                phone: companyPhone,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => {
+                updateStatus("Pengaturan toko berhasil disimpan!");
+                openTab('createInvoice');
             })
             .catch((error) => {
-                document.getElementById('result').innerHTML = 'Error: ' + error.message;
-                console.error("Error:", error);
+                console.error("Error menyimpan pengaturan:", error);
+                updateStatus("Gagal menyimpan pengaturan: " + error.message, true);
             });
+        }
+        
+        // Fungsi untuk memuat pengaturan dari Firestore
+        function loadSettings() {
+            db.collection('settings').doc('companyInfo').get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        
+                        // Update pengaturan di form
+                        document.getElementById('settings-company-name').value = data.name;
+                        document.getElementById('settings-company-address').value = data.address;
+                        document.getElementById('settings-company-phone').value = data.phone;
+                        
+                        // Update di header
+                        document.getElementById('company-name').innerHTML = data.name;
+                        document.getElementById('company-address').innerHTML = data.address;
+                        document.getElementById('company-contact').innerHTML = `Telp: ${data.phone}`;
+                        
+                        updateStatus("Pengaturan berhasil dimuat");
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error memuat pengaturan:", error);
+                    updateStatus("Gagal memuat pengaturan: " + error.message, true);
+                });
+        }
+        
+        // Jalankan saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM Content Loaded");
+            
+            // Set tanggal hari ini
+            document.getElementById('invoice-date').valueAsDate = new Date();
+            
+            // Inisialisasi tab handlers
+            var tabs = document.getElementsByClassName('tab');
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].onclick = function() {
+                    var tabName = this.textContent.trim().toLowerCase().replace(/\s+/g, '');
+                    openTab(tabName);
+                };
+            }
+            
+            // Muat pengaturan
+            setTimeout(() => {
+                loadSettings();
+            }, 1000); // Tunggu 1 detik untuk memastikan Firebase sudah siap
         });
     </script>
 </body>
